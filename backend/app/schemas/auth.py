@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 class LoginRequest(BaseModel):
     password: str
@@ -10,4 +11,4 @@ class LoginResponse(BaseModel):
 
 class VerifyResponse(BaseModel):
     valid: bool
-    expires_at: datetime | None = None
+    expires_at: Optional[datetime] = None
