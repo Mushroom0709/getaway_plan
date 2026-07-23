@@ -238,10 +238,10 @@ curl -X POST http://HOST:10338/api/spots/$SPOT_ID/notes \
   }'
 ```
 
-### 场景 8: 生成路线（导航路段）
+### 场景 8: 生成路线
 
 ```bash
-# 步骤 8: 调用高德 API 生成实际道路路线
+# 8a: 调用高德 API 生成实际自驾道路路线
 FROM_SPOT=1   # 西宁
 TO_SPOT=100   # 岗什卡雪峰
 curl -X POST http://HOST:10338/api/trips/$TRIP_ID/routes/plan \
@@ -251,10 +251,26 @@ curl -X POST http://HOST:10338/api/trips/$TRIP_ID/routes/plan \
     "from_spot_id": '$FROM_SPOT',
     "to_spot_id": '$TO_SPOT',
     "color": "#4caf50",
-    "day_number": 1
+    "day_number": 1,
+    "route_type": "driving"
   }'
-# 返回 { "id": 1, "distance_km": 156.3, "duration_min": 150, "polyline": "..." }
-```
+# 返回 { "id": 1, "distance_km": 156.3, "duration_min": 150, "polyline": "...", "route_type": "driving" }
+
+# 8b: 直接创建公共交通路线（航班/高铁虚线）
+curl -X POST http://HOST:10338/api/trips/$TRIP_ID/routes \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_spot_id": 47,
+    "to_spot_id": 1,
+    "color": "#e91e63",
+    "day_number": 0,
+    "route_type": "transit",
+    "distance_km": 1300,
+    "duration_min": 145,
+    "polyline": "114.30,30.60;110.0,34.0;105.0,36.0;101.77,36.62"
+  }'
+# route_type: "driving" = 实线+方向箭头, "transit" = 虚线+无箭头
 
 ### 场景 9: 添加航班/高铁
 
@@ -328,8 +344,9 @@ curl -X POST http://HOST:10338/api/trips/$TRIP_ID/budget \
 ### 导航规则
 - `is_nav_point=true` 的点参与路线规划
 - 按 `nav_order` 升序连接
-- 高德 REST API 逐段计算实际道路
-- 前端 `AMap.Polyline(showDir: true)` 显示方向箭头
+- **自驾路线**：调用高德 REST API 逐段计算实际道路，前端实线+方向箭头
+- **公共交通路线**：直接创建 `route_type="transit"`，手工 polyline，前端虚线显示
+- `route_type` 取值：`"driving"`（默认，实线）或 `"transit"`（虚线）
 
 ### 图片存储
 - 小红书/抖音图片下载后存储到服务器 `/opt/photos/{spot_name}/{platform}/{author}/`
@@ -343,15 +360,16 @@ AI Agent 规划旅行时的推荐调用顺序：
 1. `POST /api/auth/login` → 获取 token
 2. `POST /api/trips` → 创建旅行
 3. `POST /api/trips/{id}/days` → 逐天创建行程
-4. `POST /api/trips/{id}/spots` → 添加坐标点（含导航点标记）
+4. `POST /api/trips/{id}/spots` → 添加坐标点（含导航点标记和机场/高铁站）
 5. `POST /api/spots/{id}/attraction` → 关联景点详情
 6. `POST /api/trips/{id}/hotels` → 关联酒店
 7. `POST /api/trips/{id}/restaurants` → 关联餐厅
-8. `POST /api/restaurants/{id}/dishes` → 添加菜品
+8. `POST /api/restaurants/{id}/dishs` → 添加菜品
 9. `POST /api/spots/{id}/notes` → 添加小红书/抖音笔记
-10. `POST /api/trips/{id}/routes/plan` → 逐段生成路线
-11. `POST /api/trips/{id}/flights` → 添加航班
-12. `POST /api/trips/{id}/rails` → 添加高铁
-13. `POST /api/trips/{id}/cars` → 添加租车
-14. `POST /api/trips/{id}/budget` → 添加费用
-15. `POST /api/trips/{id}/weather` → 添加天气
+10. `POST /api/trips/{id}/routes/plan` → 逐段生成自驾路线（driving）
+11. `POST /api/trips/{id}/routes` → 直接创建公共交通路线（transit），供航班/高铁虚线
+12. `POST /api/trips/{id}/flights` → 添加航班
+13. `POST /api/trips/{id}/rails` → 添加高铁
+14. `POST /api/trips/{id}/cars` → 添加租车
+15. `POST /api/trips/{id}/budget_items` → 添加费用
+16. `POST /api/trips/{id}/weathers` → 添加天气

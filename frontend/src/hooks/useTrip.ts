@@ -33,8 +33,8 @@ export function useTrip(tripId: number | null): TripData {
       api.get(`/trips/${tripId}/hotels`),
       api.get(`/trips/${tripId}/restaurants`),
       api.get(`/trips/${tripId}/routes`),
-      api.get(`/trips/${tripId}/budget`),
-      api.get(`/trips/${tripId}/weather`),
+      api.get(`/trips/${tripId}/budget_items`),
+      api.get(`/trips/${tripId}/weathers`),
     ]).then(([tripRes, spotsRes, hotelsRes, restRes, routesRes, budgetRes, weatherRes]) => {
       setData({
         trip: tripRes.data, days: tripRes.data.days || [],

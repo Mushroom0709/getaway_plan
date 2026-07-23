@@ -7,12 +7,17 @@
 │                          浏览器                                   │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │               React 19 SPA (Vite + Tailwind CSS v4)      │   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │   │
-│  │  │ 地图面板  │  │ 行程总览  │  │ 费用估算  │              │   │
-│  │  │ (高德2.0) │  │          │  │          │              │   │
-│  │  └──────────┘  └──────────┘  └──────────┘              │   │
 │  │  ┌──────────────────────────────────────────────────┐   │   │
-│  │  │  右侧滑出面板 (酒店/景点/笔记/美食/租车)          │   │   │
+│  │  │              全屏高德地图 (AMap JS API 2.0)       │   │   │
+│  │  │   · 47 个标记 (scenic/photo/hotel/rest...)  │   │   │
+│  │  │   · 22 条自驾路线 (实线+箭头)                    │   │   │
+│  │  │   · 3 条 transit 路线 (虚线, 航班)                     │   │   │
+│  │  └──────────────────────────────────────────────────┘   │   │
+│  │  ┌──────────────────────────────────────────────────┐   │   │
+│  │  │  悬浮顶栏 (TripSelector + DayNav Tabs)           │   │   │
+│  │  └──────────────────────────────────────────────────┘   │   │
+│  │  ┌──────────────────────────────────────────────────┐   │   │
+│  │  │  右侧滑出面板 (酒店/景点/笔记/美食/城市详情)      │   │   │
 │  │  └──────────────────────────────────────────────────┘   │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │  Axios ←── JWT Token (7天) ──→ /api/*                           │
@@ -20,7 +25,7 @@
                               │
                               ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                  Nginx (alpine, 端口 10338)                       │
+│                  Nginx (alpine, 端口 ${NGINX_PORT})                       │
 │  /          → dist/index.html (SPA)                              │
 │  /api/*     → proxy_pass http://api:8000/api/                    │
 │  /photos/*  → serve 静态照片目录                                  │
@@ -37,11 +42,15 @@
 │  │restaurant│  │ flights  │  │  rails   │  │  budget  │       │
 │  │  router  │  │  router  │  │  router  │  │  router  │       │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
-│  ┌──────────┐  ┌──────────┐                                    │
-│  │  notes   │  │  route   │  ← 高德路线规划                      │
-│  │  router  │  │  router  │                                    │
-│  └──────────┘  └──────────┘                                    │
-│  SQLAlchemy 2.0 (async) + Alembic                               │
+│  ┌──────────┐  ┌──────────────────────────────────┐           │
+│  │  routes  │  │  route_service                    │           │
+│  │  router  │  │  (高德规划 driving + 直接创建 transit)│        │
+│  └──────────┘  └──────────────────────────────────┘           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                    │
+│  │  notes   │  │  weather │  │  meals   │                    │
+│  │  router  │  │  router  │  │  router  │                    │
+│  └──────────┘  └──────────┘  └──────────┘                    │
+│  SQLAlchemy 2.0 (async) + Alembic (2 migrations)              │
 └──────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -66,7 +75,7 @@
 | 构建 | Vite | 8 | |
 | 样式 | Tailwind CSS | v4 | taste skill 视觉体系 |
 | 图标 | @phosphor-icons/react | latest | |
-| 地图 | 高德 JS API | 2.0 | key: f2a8c18781eefe2b345d24ca91418e96 |
+| 地图 | 高德 JS API | 2.0 | key 通过 VITE_AMAP_KEY 环境变量配置 |
 | 路线 | 高德 REST API | v3 | /v3/direction/driving |
 | HTTP | Axios | latest | 前端请求 |
 | 部署 | Docker Compose | — | 2 容器 |
@@ -204,7 +213,7 @@ services:
       DATABASE_URL: mysql+aiomysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/getaway_plan
       JWT_SECRET: ${JWT_SECRET}
       ACCESS_PASSWORD_HASH: ${ACCESS_PASSWORD_HASH}
-      AMAP_KEY: f2a8c18781eefe2b345d24ca91418e96
+      AMAP_KEY: ${AMAP_KEY}
     volumes:
       - ./frontend/dist:/app/static
     restart: always

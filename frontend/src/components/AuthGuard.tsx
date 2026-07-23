@@ -4,9 +4,10 @@ import { useState } from 'react'
 
 interface AuthGuardProps {
   children: React.ReactNode
+  onLogin?: () => void
 }
 
-export default function AuthGuard({ children }: AuthGuardProps) {
+export default function AuthGuard({ children, onLogin }: AuthGuardProps) {
   const { token, isLoading, login } = useAuth()
   const [error, setError] = useState<string>()
 
@@ -20,7 +21,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   if (!token) {
     return <LoginPage onLogin={async (p) => {
-      try { await login(p) } catch { setError('密码错误，请重试') }
+      try { await login(p); onLogin?.() } catch { setError('密码错误，请重试') }
     }} error={error} />
   }
 

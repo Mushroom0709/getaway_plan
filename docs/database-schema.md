@@ -127,9 +127,10 @@ trips ──1:N──> days ──1:N──> spots ──1:N──> attractions
 | to_spot_id | INT FK→spots.id | | |
 | distance_km | DECIMAL(8,2) | | |
 | duration_min | INT | | |
-| polyline | TEXT | | 高德 REST API 返回的 polyline |
-| color | VARCHAR(20) | | 路线颜色 |
-| day_number | INT | | |
+| polyline | TEXT | | 高德 REST API 返回的 polyline，或手工构造的虚线路径 |
+| color | VARCHAR(20) | | 路线颜色（如 "#4caf50"） |
+| day_number | INT | | 所属天（0-6） |
+| route_type | VARCHAR(20) | ✓ | driving（自驾实线）或 transit（公共交通虚线） |
 
 ## 8. hotels — 酒店
 

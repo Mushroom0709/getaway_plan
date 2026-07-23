@@ -8,6 +8,7 @@ class SocialImageCreate(BaseModel):
     width: Optional[int] = None
     height: Optional[int] = None
     sort_order: int = 0
+    local_path: Optional[str] = None
 
 class SocialNoteCreate(BaseModel):
     platform: str  # xiaohongshu or douyin

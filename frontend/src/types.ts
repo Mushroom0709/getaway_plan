@@ -113,6 +113,7 @@ export interface RouteSegment {
   polyline?: string
   color?: string
   day_number?: number
+  route_type?: string  // "driving" or "transit"
 }
 
 export interface BudgetItem {

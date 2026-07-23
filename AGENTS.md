@@ -22,7 +22,7 @@ getaway_plan_v1/
 │   └── requirements.txt
 ├── frontend/                   # React + Vite + Tailwind CSS v4
 │   ├── src/
-│   │   ├── components/        # 14 个组件
+│   │   ├── components/        # 14 个组件（全屏地图 + 分类详情）
 │   │   ├── hooks/             # 3 个 hook（useAuth, useIsMobile, useTrip）
 │   │   ├── services/api.ts   # Axios + JWT 拦截器
 │   │   ├── types.ts           # TypeScript 类型定义
@@ -60,18 +60,19 @@ getaway_plan_v1/
 | 认证 | bcrypt + PyJWT | POST /api/auth/login → Bearer token |
 | 前端框架 | React 19 + TypeScript | Vite 6 构建 |
 | 样式 | Tailwind CSS v4 | @tailwindcss/vite 插件 |
-| 地图 | 高德 JS API 2.0 | 底图 + 标记 + 路线 polyline |
+| 地图 | 高德 JS API 2.0 | 全屏底图 + 46 标记 + 实线/虚线路线 |
 | 图标 | @phosphor-icons/react | — |
 | HTTP | Axios | JWT 拦截器 + 401 跳登录 |
-| 部署 | Docker Compose | nginx:alpine + python:3.12-slim |
+| 部署 | Docker Compose | nginx:alpine + python:3.12-slim + mysql:8.0 |
 | 图片 | nginx 直接 serve | /photos/ 别名到服务器本地目录 |
 | 镜像源 | pip: mirrors.aliyun.com（Dockerfile 已配置） | npm: registry.npmmirror.com |
+| 路线 | driving(实线+箭头) / transit(虚线) | route_type 字段，支持自驾+飞行/高铁组合 |
 
 ## 通信协议
 
 | 服务 | 端口 | 协议 | 说明 |
 |------|------|------|------|
-| nginx | 10338 | HTTP | 前端 SPA + 静态文件代理 |
+| nginx | ${NGINX_PORT:-10338} | HTTP | 前端 SPA + 静态文件代理 |
 | FastAPI | 8000（容器内） | HTTP | REST API，仅 nginx 可访问 |
 | MySQL | 3306（容器内） | TCP | 仅 api 容器可访问 |
 
@@ -80,7 +81,7 @@ API 路由前缀：`/api/`
 
 ## 数据库模型
 
-17 张表（已迁移数据：7 days / 27 spots / 10 hotels / 10 restaurants / 50 dishes / 8 budget items / 629 social notes / 6019 social images / 2 trips）：
+17 张表（已迁移数据：1 trip / 8 days / 47 spots / 10 hotels / 10 restaurants / 50 dishes / 21 attractions / 9 budget items / 4 weather / 3 rental cars / 629 social notes / 6019 social images / 22 driving routes + 3 transit routes / 1 flight）：
 
 | 表名 | 用途 | 关联 |
 |------|------|------|
@@ -108,15 +109,15 @@ API 路由前缀：`/api/`
 - 照片不进 JS 包：JS 只存路径字符串，图片由 nginx 通过 `/photos/` 别名 serve
 - 照片路径规则：`/photos/{景点中文}/{小红书|抖音}/{作者}/{5位hash}_{标题}.{ext}`
 - 不修改系统级 pip/npm 配置，只在项目级配置
-- 可用的前端密码：`admin123`（对应的 bcrypt hash 在 docker-compose.yml 中）
-- 高德 API Key: `f2a8c18781eefe2b345d24ca91418e96`
+- 前端密码通过 `ACCESS_PASSWORD_HASH` 环境变量配置（bcrypt hash）
+- 高德 API Key 通过 `AMAP_KEY` 环境变量配置
 
 ## 已部署服务
 
-- 地址：`http://27.18.114.8:10338/`
+- 地址：通过 `NGINX_PORT` 环境变量配置（默认 10338）
 - 照片（服务器本地）：`/opt/getaway_plan/photos/`（2.6GB / 6671 张图片）
-- 容器：travel-web（nginx:alpine，端口映射 10338:80）
-- API 密码：`admin123`
+- 容器：travel-web（nginx:alpine）+ travel-api（FastAPI）+ travel-db（MySQL）
+- API 密码：通过 `ACCESS_PASSWORD_HASH` 环境变量配置
 
 ## 术语
 
@@ -127,5 +128,5 @@ API 路由前缀：`/api/`
 | Spot | 地图上一个标记点（住宿城市/景区/拍照点） |
 | Nav Point | 路线规划途经点（is_nav_point=true） |
 | Social Note | 小红书/抖音的笔记内容 |
-| Route Segment | 高德 REST API 返回的一段真实道路路线 |
+| Route Segment | 高德 REST API 返回的一段真实道路路线，或手工构造的公共交通路径 | `route_type` 区分 driving(实线)/transit(虚线) |
 | Budget Item | 一条费用明细（类别/项目/单价/数量/小计） |

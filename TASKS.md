@@ -2,8 +2,6 @@
 
 ## 任务总览
 
-| 阶段 | 名称 | 任务数 | 预估工时 | 依赖 |
-|------|------|--------|----------|------|
 | 阶段 | 名称 | 任务数 | 状态 | 依赖 |
 |------|------|--------|------|------|
 | P0 | 项目基建 | 5 | ✅ DONE | — |
@@ -17,7 +15,11 @@
 | P8 | 前端地图 | 3 | ✅ DONE | P7 |
 | P9 | 前端 UI 组件 | 8 | ✅ DONE | P7 |
 | P10 | 部署上线 | 4 | ✅ DONE | P2-P9 |
-| **总计** | | **40** | **✅ 全部完成** | |
+| P11 | 独立部署重构 | 4 | ✅ DONE | P10 |
+| P12 | 数据迁移 | 6 | ✅ DONE | P11 |
+| P13 | 前端重构（地图全屏） | 4 | ✅ DONE | P12 |
+| P14 | 公共交通路线 | 4 | ✅ DONE | P13 |
+| **总计** | | **58** | **✅ 全部完成** | |
 
 ---
 
@@ -277,10 +279,10 @@
 - 验证: `docker compose up -d`，curl 访问
 
 ### T10-4: 服务器部署
-- SSH 到 ecs-xj-ai-service (27.18.114.8:10332)
+- SSH 到服务器 (HOST:PORT)
 - scp 项目文件 → docker compose up -d
-- 端口 10338，路由 /travel/
-- 验证: curl http://27.18.114.8:10338/api/health 返回 200
+- 端口 ${NGINX_PORT}，路由 /
+- 验证: curl http://HOST:PORT/api/health 返回 200
 
 ---
 
@@ -303,3 +305,120 @@ P0 (基建)
 - P1 完成后，P2-P6 可并行（不同路由文件，无冲突）
 - P7 完成后，P8 和 P9 可并行
 - P2-P9 全部完成后，执行 P10
+
+---
+
+## P11: 独立部署重构
+
+### T11-1: 项目独立化
+- 部署目录: `/home/workspace/mushroom/getaway_plan/`
+- MySQL 独立卷: `getaway_plan_v1_mysql_data`
+- 停用旧 `/opt/getaway_plan/` 的 docker-compose
+- 验证: 三容器独立运行
+
+### T11-2: Alembic 迁移系统搭建
+- 创建 `alembic.ini` + `alembic/env.py`（async MySQL）
+- 编写 `001_create_all_tables.py`（17 张表初始迁移）
+- 验证: `alembic upgrade head` 创建全部表
+
+### T11-3: 密码与配置
+- 密码变更为 `2026`，更新 bcrypt hash
+- 修复 `auth_token.py` 的 Base 引用（从 trip.py 导入）
+- 修复前端 `useTrip.ts` API 路径（budget→budget_items, weather→weathers）
+- 验证: curl 登录返回 token
+
+### T11-4: Docker 构建流程
+- Dockerfile 恢复为纯 CMD（不含 alembic auto-migrate）
+- 迁移手动执行: `docker exec getaway_plan-api-1 sh -c 'cd /app && PYTHONPATH=/app alembic upgrade head'`
+- 验证: 迁移成功后 API 返回空数组（空数据库）
+
+---
+
+## P12: 数据迁移
+
+### T12-1: 数据提取
+- 使用 tsx 从 qinggan-travel 提取 TS 数据为 JSON
+- 输出: itinerary.json, spots.json, hotels.json, food.json, budget.json, weather.json, rental.json, photos.json
+- 验证: 8 个 JSON 文件，总计 ~850KB
+
+### T12-2: 导入脚本
+- 编写 `scripts/import_data.py`，通过 REST API 调用后端接口导入
+- 按顺序创建: Trip → Days → Spots → Attractions → Hotels → Restaurants → Dishes → Budget → Weather → Cars → Social Notes
+- 验证: 全部数据入库
+
+### T12-3: 社交笔记导入
+- 629 条 social_notes + 6019 张 social_images
+- 图片路径映射到服务器 `/opt/getaway_plan/photos/{spot}/{platform}/{author}/`
+- nginx `/photos/` 别名已就位
+- 验证: Click spot → SlidePanel → PhotoGallery
+
+### T12-4: 路线生成
+- 调用高德 API 生成 21 条自驾 route_segments
+- 含 day_number、color、polyline
+- 4 条超长距离路线失败（张掖→敦煌等跨越不同日期的路段）
+- 验证: MapPanel 显示彩色路线
+
+### T12-5: Days 关联
+- Spots 的 day_id 关联到正确的 Days
+- 26 个原始 spots + 20 个酒店/餐厅 spots 全部关联
+- 验证: 切换 DayTab 过滤正确
+
+### T12-6: 更新照片软链接
+- `/opt/photos/` → `/opt/getaway_plan/photos/` 软链接
+- 验证: `http://HOST:PORT/photos/` 可访问
+
+---
+
+## P13: 前端重构（地图全屏）
+
+### T13-1: MapPanel 全量渲染
+- 始终显示全部 46 个 spots（不按 day 过滤）
+- 始终显示全部 route_segments
+- activeDay 控制高亮/变暗，非过滤
+- 修复首次加载不显示：增加 `mapReady` 状态绑定 effect 依赖
+- 验证: 选择 trip 后所有标记立即显示
+
+### T13-2: App.tsx 地图优先布局
+- 地图占满全屏（h-screen, flex-1）
+- 顶栏悬浮半透明（absolute, bg-white/90, backdrop-blur-sm）
+- 移除右侧 DayContent 面板
+- TripSelector 在所有状态下可见
+- 验证: 页面加载即见全屏地图
+
+### T13-3: TopNav "全部" 标签
+- 新增 🗺️ 全部 标签，默认选中
+- activeDay='all' 时全部标记和路线均等显示
+- 验证: 点击各标签切换
+
+### T13-4: SlidePanel 分类详情
+- hotel: HotelDetail + 当天行程摘要
+- restaurant: RestaurantDetail + dishes + 当天行程
+- scenic/photo: AttractionDetail + PhotoGallery + notes
+- stay/other: 当天摘要 + 该城市酒店列表
+- 验证: 点击各类标记弹出对应详情
+
+---
+
+## P14: 公共交通路线
+
+### T14-1: route_type 字段
+- 模型 `route_segment.py` 新增 `route_type`（driving/transit）
+- Schema 新增 `RouteCreateRequest`
+- 迁移 `002_add_route_type.py`
+- 验证: 列创建成功
+
+### T14-2: 直接创建路线 API
+- 新增 `POST /api/trips/{id}/routes`（不调用高德 API）
+- plan 端点也支持 route_type 字段
+- 验证: 可直接创建带 polyline 的路线
+
+### T14-3: 航班虚线路线
+- 创建 武汉（airport spot, lng=114.30, lat=30.60）
+- 武汉→西宁: transit route（粉色虚线, D0）
+- 敦煌→酒泉: transit route（粉色虚线, D6）
+- 验证: 地图显示虚线
+
+### T14-4: MapPanel 虚线渲染
+- transit 路线: strokeStyle='dashed', strokeDasharray=[10,8], showDir=false
+- driving 路线: strokeStyle='solid', showDir=true
+- 验证: D0 武汉→西宁 为虚线

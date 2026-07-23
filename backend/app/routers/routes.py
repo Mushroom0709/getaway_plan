@@ -5,7 +5,7 @@ from app.database import get_db
 from app.deps import get_current_device_id
 from app.models.route_segment import RouteSegment
 from app.models.spot import Spot
-from app.schemas.route_segment import RoutePlanRequest, RouteSegmentResponse
+from app.schemas.route_segment import RoutePlanRequest, RouteCreateRequest, RouteSegmentResponse
 from app.services.route_service import plan_route
 
 router = APIRouter(prefix="/api", tags=["routes"], dependencies=[Depends(get_current_device_id)])
@@ -37,6 +37,26 @@ async def plan(trip_id: int, data: RoutePlanRequest, db: AsyncSession = Depends(
         polyline=result["polyline"],
         color=data.color,
         day_number=data.day_number,
+        route_type=data.route_type,
+    )
+    db.add(segment)
+    await db.commit()
+    await db.refresh(segment)
+    return RouteSegmentResponse.model_validate(segment)
+
+@router.post("/trips/{trip_id}/routes", response_model=RouteSegmentResponse, status_code=201)
+async def create_route(trip_id: int, data: RouteCreateRequest, db: AsyncSession = Depends(get_db)):
+    """Create a route segment directly (for transit/conceptual routes without driving API)"""
+    segment = RouteSegment(
+        trip_id=trip_id,
+        from_spot_id=data.from_spot_id,
+        to_spot_id=data.to_spot_id,
+        distance_km=data.distance_km,
+        duration_min=data.duration_min,
+        polyline=data.polyline,
+        color=data.color,
+        day_number=data.day_number,
+        route_type=data.route_type,
     )
     db.add(segment)
     await db.commit()

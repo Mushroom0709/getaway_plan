@@ -1,9 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from datetime import datetime, timezone
-
-class Base(DeclarativeBase):
-    pass
+from app.models.trip import Base
 
 class AuthToken(Base):
     __tablename__ = "auth_tokens"

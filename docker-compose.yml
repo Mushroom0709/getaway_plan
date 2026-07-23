@@ -10,7 +10,7 @@ services:
       - "3306:3306"
     restart: always
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,10 +21,10 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: mysql+aiomysql://root:getaway_mysql_2026@db:3306/getaway_plan
-      JWT_SECRET: getaway_jwt_secret_key_2026
-      ACCESS_PASSWORD_HASH: $$2b$$12$$AGDuQP3ZVOM6Vn1byujnsepgI3LgtTJt1Ich8SPFjcwJxGsJBWqty
-      AMAP_KEY: f2a8c18781eefe2b345d24ca91418e96
+      DATABASE_URL: mysql+aiomysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/getaway_plan
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_PASSWORD_HASH: ${ACCESS_PASSWORD_HASH}
+      AMAP_KEY: ${AMAP_KEY}
     volumes:
       - ./frontend/dist:/app/static
     restart: always
@@ -36,9 +36,11 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./frontend/dist:/usr/share/nginx/html:ro
+      - /opt/getaway_plan/photos:/opt/photos:ro
     depends_on:
       - api
     restart: always
 
 volumes:
   mysql_data:
+    name: getaway_plan_v1_mysql_data

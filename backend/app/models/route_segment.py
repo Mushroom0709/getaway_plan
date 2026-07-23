@@ -13,3 +13,4 @@ class RouteSegment(Base):
     polyline = Column(Text, nullable=True)
     color = Column(String(20), nullable=True)
     day_number = Column(Integer, nullable=True)
+    route_type = Column(String(20), nullable=False, default="driving")  # "driving" or "transit"

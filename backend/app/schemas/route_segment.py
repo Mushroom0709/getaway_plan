@@ -6,6 +6,17 @@ class RoutePlanRequest(BaseModel):
     to_spot_id: int
     color: str = "#4caf50"
     day_number: Optional[int] = None
+    route_type: str = "driving"  # "driving" or "transit"
+
+class RouteCreateRequest(BaseModel):
+    from_spot_id: int
+    to_spot_id: int
+    color: str = "#4caf50"
+    day_number: Optional[int] = None
+    route_type: str = "transit"
+    distance_km: Optional[float] = None
+    duration_min: Optional[int] = None
+    polyline: Optional[str] = None
 
 class RouteSegmentResponse(BaseModel):
     id: int
@@ -17,6 +28,7 @@ class RouteSegmentResponse(BaseModel):
     polyline: Optional[str] = None
     color: Optional[str] = None
     day_number: Optional[int] = None
+    route_type: Optional[str] = "driving"
 
     class Config:
         from_attributes = True
