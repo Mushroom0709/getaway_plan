@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: getaway_plan
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+aiomysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/getaway_plan
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_PASSWORD_HASH: ${ACCESS_PASSWORD_HASH}
+      AMAP_KEY: ${AMAP_KEY}
+    volumes:
+      - ./frontend/dist:/app/static
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "${NGINX_PORT:-10338}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+    restart: always
+
+volumes:
+  mysql_data:

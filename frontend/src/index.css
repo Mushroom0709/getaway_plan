@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* Taste skill warm neutral palette */
+:root {
+  --canvas: #F7F5F0;
+  --card: #FFFFFF;
+  --accent: #C47F3A;
+  --accent-hover: #A6682E;
+  --text-primary: #1A1A1A;
+  --text-secondary: #6B6B6B;
+  --border: #E8E4DC;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+}
