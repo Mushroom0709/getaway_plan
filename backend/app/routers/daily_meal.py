@@ -5,7 +5,7 @@ from typing import Optional
 from app.database import get_db
 from app.deps import get_current_device_id
 from app.models.daily_meal import DailyMeal
-from app.schemas.daily_meal import DailyMealCreate, DailyMealUpdate, DailyMealResponse
+from app.schemas.daily_meal import DailyMealCreate, DailyMealResponse
 
 router = APIRouter(prefix="/api", tags=["daily_meal"], dependencies=[Depends(get_current_device_id)])
 
@@ -20,18 +20,6 @@ async def create_daily_meal(day_id: int, data: DailyMealCreate, db: AsyncSession
     item = DailyMeal(**data.model_dump())
     setattr(item, "day_id", day_id)
     db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return DailyMealResponse.model_validate(item)
-
-@router.put("/daily_meals/{item_id}", response_model=DailyMealResponse)
-async def update_daily_meal(item_id: int, data: DailyMealUpdate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DailyMeal).where(DailyMeal.id == item_id))
-    item = result.scalar_one_or_none()
-    if not item:
-        raise HTTPException(status_code=404, detail="Not found")
-    for key, val in data.model_dump(exclude_unset=True).items():
-        setattr(item, key, val)
     await db.commit()
     await db.refresh(item)
     return DailyMealResponse.model_validate(item)

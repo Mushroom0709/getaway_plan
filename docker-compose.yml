@@ -21,10 +21,10 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: mysql+aiomysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/getaway_plan
-      JWT_SECRET: ${JWT_SECRET}
-      ACCESS_PASSWORD_HASH: ${ACCESS_PASSWORD_HASH}
-      AMAP_KEY: ${AMAP_KEY}
+      DATABASE_URL: mysql+aiomysql://root:getaway_mysql_2026@db:3306/getaway_plan
+      JWT_SECRET: getaway_jwt_secret_key_2026
+      ACCESS_PASSWORD_HASH: $$2b$$12$$AGDuQP3ZVOM6Vn1byujnsepgI3LgtTJt1Ich8SPFjcwJxGsJBWqty
+      AMAP_KEY: f2a8c18781eefe2b345d24ca91418e96
     volumes:
       - ./frontend/dist:/app/static
     restart: always
