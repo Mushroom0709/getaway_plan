@@ -4,6 +4,7 @@ from app.routers.auth import router as auth_router
 from app.routers.trips import router as trip_router
 from app.routers.days import router as day_router
 from app.routers.spots import router as spot_router
+from app.routers.routes import router as route_router
 
 app = FastAPI(title="Getaway Plan API", version="1.0.0")
 
@@ -19,6 +20,7 @@ app.include_router(auth_router)
 app.include_router(trip_router)
 app.include_router(day_router)
 app.include_router(spot_router)
+app.include_router(route_router)
 
 @app.get("/api/health")
 async def health():
