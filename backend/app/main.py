@@ -8,6 +8,7 @@ from app.routers.routes import router as route_router
 from app.routers.flights import router as flight_router
 from app.routers.highspeed_rails import router as rail_router
 from app.routers.rental_cars import router as car_router
+from app.routers.hotels import router as hotel_router
 
 app = FastAPI(title="Getaway Plan API", version="1.0.0")
 
@@ -27,6 +28,7 @@ app.include_router(route_router)
 app.include_router(flight_router)
 app.include_router(rail_router)
 app.include_router(car_router)
+app.include_router(hotel_router)
 
 @app.get("/api/health")
 async def health():
